@@ -7,16 +7,18 @@ Essa aplicação propõe uma solução para importar um arquivo .txt com quase 5
 
 ## Execução
 
-Após baixar esse repositório, você deverá acessá-lo via terminal (até a pasta raiz). Na sequência, deverá executar o comando
+Após baixar esse repositório, você deverá acessá-lo via terminal desde a pasta raiz (Dica: no diretório onde se encontra o arquivo **docker-compose.yml**). Na sequência, deverá executar o comando
 ```
 docker-compose up -d postgres
 ```
-para que o banco de dados fique disponível.
+para que o banco de dados PostgreSQL fique disponível.
 
-Ao final desse procedimento, executar o comando
+Ao final desse procedimento, execute o comando
 ```
 docker-compose up go
 ```
 e a aplicação fará a importação dos dados. 
 
 Nos logs do terminal serão apresentadas algumas informações, destacando a hora em que o processo se iniciou e encerrou, bem como o número de registros importados.
+
+Como a aplicação foi gerada no formato executável, após o comando que sobe o container do Go ser executado, o container irá morrer. Já o container do PostgreSQL ficará no ar, podendo ser acessado por algum SGBD (no arquivo **docker-compose.yml** tem as credenciais do banco).

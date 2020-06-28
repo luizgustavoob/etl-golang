@@ -3,12 +3,14 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
+
+	"github.com/lib/pq"
 )
 
 var mydb *sql.DB
-
-const sqlCopyFrom = "copy %s from '%s' with delimiter '|' csv header"
 
 const sqlCleanData = "insert into dados_limpos " +
 	" (cpf, private, incompleto, ultima_compra, ticket_medio, ticket_ultima_compra, loja_mais_frequente, loja_ultima_compra) " +
@@ -39,22 +41,22 @@ const sqlCleanData = "insert into dados_limpos " +
 
 const sqlSelectCount = "select count(cpf) as qtde from dados_limpos"
 
+func checkErr(err error) {
+	if err != nil {
+		fmt.Println("Erro:", err.Error())
+		panic(err)
+	}
+}
+
 // OpenDB abre o banco de dados
 func OpenDB() {
 	db, err := sql.Open("postgres", os.Getenv("DATABASE"))
-
-	if err != nil {
-		fmt.Println("Erro pra abrir bd", err.Error())
-		panic(err)
-	}
+	checkErr(err)
 
 	mydb = db
 
 	errPing := mydb.Ping()
-	if errPing != nil {
-		fmt.Println("Erro no ping", errPing.Error())
-		panic(errPing)
-	}
+	checkErr(errPing)
 }
 
 // CloseDB fecha a conexão com o banco de dados
@@ -64,29 +66,59 @@ func CloseDB() {
 
 // InsertRawData insere os dados brutos, sem verificações
 func InsertRawData(file string) {
-	_, err := mydb.Exec(fmt.Sprintf(sqlCopyFrom, "dados_brutos", file))
+	// abre o arquivo "full"
+	content, err := ioutil.ReadFile(file)
+	checkErr(err)
 
-	if err != nil {
-		panic(err.Error())
+	// abre transação do banco
+	txn, errTxn := mydb.Begin()
+	checkErr(errTxn)
+
+	// prepara o COPY FROM
+	stmt, errCopyIn := txn.Prepare(pq.CopyIn("dados_brutos", "cpf", "private", "incompleto", "ultima_compra",
+		"ticket_medio", "ticket_ultima_compra", "loja_mais_frequente", "loja_ultima_compra"))
+	checkErr(errCopyIn)
+
+	// pega todas as linhas do arquivo
+	lines := strings.Split(string(content), "\n")
+	count := 0
+	for _, line := range lines {
+		count++
+		// ignora header
+		if count == 1 {
+			continue
+		}
+
+		// pega as colunas do arquivo. vai ser cada field no bd
+		columns := strings.Split(line, "|")
+
+		// a última linha do arquivo tá em branco, portanto o split não vai retornar colunas
+		if len(columns) > 0 {
+			_, err = stmt.Exec(columns[0], columns[1], columns[2], columns[3], columns[4],
+				columns[5], columns[6], columns[7])
+			checkErr(errCopyIn)
+		}
 	}
+
+	// fecha statement
+	errStmt := stmt.Close()
+	checkErr(errStmt)
+
+	// commita transação
+	errCmt := txn.Commit()
+	checkErr(errCmt)
 }
 
 // InsertCleanData a partir da tabela de dados brutos, insere os dados limpos, higienizados
 func InsertCleanData() {
 	_, err := mydb.Exec(sqlCleanData)
-
-	if err != nil {
-		panic(err.Error())
-	}
+	checkErr(err)
 }
 
 // SelectCount realiza a contagem de registros na tabela de dados limpos
 func SelectCount() {
 	rows, err := mydb.Query(sqlSelectCount)
-
-	if err != nil {
-		panic(err.Error())
-	}
+	checkErr(err)
 
 	for rows.Next() {
 		var rowsAffected int64
