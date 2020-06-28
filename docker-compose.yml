@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  go:
+    build: ./app/
+    environment: 
+      DATABASE: host=postgres port=5432 user=postgres password=postgres dbname=nwy sslmode=disable
+      WORKSPACE: /go/src/import-file-nwy
+    ports:
+      - "8085:8085"
+    depends_on: 
+      - postgres
+  
+  postgres:
+    build: ./postgres/
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nwy
+    ports:
+      - "5432:5432"
