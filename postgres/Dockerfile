@@ -5,4 +5,4 @@ FROM postgres:13-alpine
 # Copia os scripts de criação de tabela
 COPY main.sql /docker-entrypoint-initdb.d
 # Expoe a porta
-EXPOSE 5432
+EXPOSE 5439

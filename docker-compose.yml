@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.0'
 services:
   go:
     build: ./app/
@@ -17,4 +17,4 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: nwy
     ports:
-      - "5432:5432"
+      - "5439:5432"
