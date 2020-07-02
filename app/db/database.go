@@ -12,9 +12,20 @@ import (
 
 var mydb *sql.DB
 
+const (
+	colunaCpf                = 0
+	colunaPrivate            = 1
+	colunaIncompleto         = 2
+	colunaUltimaCompra       = 3
+	colunaTicketMedio        = 4
+	colunaTicketUltimaCompra = 5
+	colunaLojaMaisFrequente  = 6
+	colunaLojaUltimaCompra   = 7
+)
+
 const sqlCleanData = "insert into dados_limpos " +
 	" (cpf, private, incompleto, ultima_compra, ticket_medio, ticket_ultima_compra, loja_mais_frequente, loja_ultima_compra) " +
-	" (select replace(replace(db.cpf, '.', ''), '-', '') as cpf, " +
+	" (select replace(replace(replace(db.cpf, '.', ''), '/', ''), '-', '') as cpf, " +
 	"				cast(db.private as integer) as private, " +
 	"				cast(db.incompleto as integer) as incompleto, " +
 	"				(case db.ultima_compra " +
@@ -90,12 +101,12 @@ func InsertRawData(file string) {
 		}
 
 		// pega as colunas do arquivo. vai ser cada field no bd
-		columns := strings.Split(line, "|")
+		columns := strings.Split(strings.TrimSpace(line), "|")
 
 		// a última linha do arquivo tá em branco, portanto o split não vai retornar colunas
 		if len(columns) > 0 {
-			_, err = stmt.Exec(columns[0], columns[1], columns[2], columns[3], columns[4],
-				columns[5], columns[6], columns[7])
+			_, err = stmt.Exec(columns[colunaCpf], columns[colunaPrivate], columns[colunaIncompleto], columns[colunaUltimaCompra],
+				columns[colunaTicketMedio], columns[colunaTicketUltimaCompra], columns[colunaLojaMaisFrequente], columns[colunaLojaUltimaCompra])
 			checkErr(errCopyIn)
 		}
 	}
