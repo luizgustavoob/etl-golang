@@ -1,14 +1,15 @@
 version: '3.0'
+
 services:
   go:
     build: ./app/
     environment: 
       DATABASE: host=postgres port=5432 user=postgres password=postgres dbname=nwy sslmode=disable
-      WORKSPACE: /go/src/import-file-nwy
     ports:
       - "8085:8085"
     depends_on: 
       - postgres
+    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "main.go"]
   
   postgres:
     build: ./postgres/

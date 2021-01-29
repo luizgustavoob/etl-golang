@@ -1,4 +1,4 @@
-# Importação de arquivo
+# ETL - Golang + PostgreSQL
 
 Essa aplicação propõe uma solução para importar um arquivo .txt com quase 50.000 linhas no menor tempo possível. Para isso, utiliza a linguagem Go e o banco de dados PostgreSQL.
 
@@ -9,13 +9,7 @@ Essa aplicação propõe uma solução para importar um arquivo .txt com quase 5
 
 Após baixar esse repositório, você deverá acessá-lo via terminal desde a pasta raiz (Dica: no diretório onde se encontra o arquivo **docker-compose.yml**). Na sequência, deverá executar o comando
 ```
-docker-compose up -d postgres
-```
-para que o banco de dados PostgreSQL fique disponível.
-
-Ao final desse procedimento, execute o comando
-```
-docker-compose up go
+docker-compose up
 ```
 e a aplicação fará a importação dos dados. 
 
