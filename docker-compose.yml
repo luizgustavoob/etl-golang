@@ -3,19 +3,24 @@ version: '3.0'
 services:
   go:
     build: ./app/
+    working_dir: /go/src/github.com/etl-golang/app
     environment: 
       DATABASE: host=postgres port=5432 user=postgres password=postgres dbname=nwy sslmode=disable
+    volumes:
+      - ./scripts/shell:/go/src/github.com/etl-golang/app/scripts
     ports:
       - "8085:8085"
     depends_on: 
       - postgres
-    command: ["./wait-for-it.sh", "postgres:5432", "--", "go", "run", "main.go"]
+    command: ["./scripts/wait-for-it.sh", "postgres:5432", "--", "go", "run", "cmd/etl/main.go"]
   
   postgres:
-    build: ./postgres/
+    image: postgres:12-alpine
     environment:
+      POSTGRES_DB: nwy
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: nwy
     ports:
       - "5439:5432"
+    volumes: 
+      - ./scripts/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
