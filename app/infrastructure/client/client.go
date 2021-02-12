@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"regexp"
 	"strings"
 
 	"github.com/lib/pq"
@@ -29,39 +30,32 @@ func NewETLClient(db *sql.DB) *etlClient {
 }
 
 func (e *etlClient) InsertRawData(file string) (err error) {
-	// abre o arquivo "full"
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
 		return
 	}
 
-	// abre transação do banco
 	txn, err := e.db.Begin()
 	if err != nil {
 		return
 	}
 
-	// prepara o COPY FROM
 	stmt, err := txn.Prepare(pq.CopyIn("dados_brutos", "cpf", "private", "incompleto", "ultima_compra",
 		"ticket_medio", "ticket_ultima_compra", "loja_mais_frequente", "loja_ultima_compra"))
 	if err != nil {
 		return
 	}
 
-	// pega todas as linhas do arquivo
+	re := regexp.MustCompile(`\s+`)
+
 	lines := strings.Split(string(content), "\n")
-	count := 0
-	for _, line := range lines {
-		count++
-		// ignora header
-		if count == 1 {
+	for i, line := range lines {
+		if i == 0 {
 			continue
 		}
 
-		// pega as colunas do arquivo. vai ser cada field no bd
-		columns := strings.Split(strings.TrimSpace(line), "|")
+		columns := re.Split(strings.TrimSpace(line), -1)
 
-		// a última linha do arquivo tá em branco, portanto o split não vai retornar colunas
 		if len(columns) > 0 {
 			_, err = stmt.Exec(columns[colunaCpf], columns[colunaPrivate], columns[colunaIncompleto], columns[colunaUltimaCompra],
 				columns[colunaTicketMedio], columns[colunaTicketUltimaCompra], columns[colunaLojaMaisFrequente], columns[colunaLojaUltimaCompra])
@@ -71,13 +65,11 @@ func (e *etlClient) InsertRawData(file string) (err error) {
 		}
 	}
 
-	// fecha statement
 	err = stmt.Close()
 	if err != nil {
 		return
 	}
 
-	// commita transação
 	err = txn.Commit()
 	if err != nil {
 		return

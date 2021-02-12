@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -12,24 +13,28 @@ import (
 )
 
 var (
-	etl domain.ETL
-	db  *sql.DB
+	etl      domain.ETL
+	db       *sql.DB
+	filename *string
 )
 
-const filename = "base_formatada.txt"
+func init() {
+	filename = flag.String("f", "", "set a file to import")
+	flag.Parse()
+}
 
 func main() {
+	if *filename == "" {
+		fmt.Println("\"File\" param not be empty")
+		return
+	}
 
-	// for {
-	// 	time.Sleep(10 * time.Second)
-
-	// }
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
+	if _, err := os.Stat(*filename); os.IsNotExist(err) {
 		fmt.Println("ERROR: File not found.")
 		return
 	}
 
-	db, err := postgres.NewPostgresDB(os.Getenv("DATABASE"))
+	db, err := postgres.NewPostgresDB(getDatabase())
 	if err != nil {
 		return
 	}
@@ -38,7 +43,7 @@ func main() {
 
 	fmt.Println("Início", time.Now().Format("02/01/2006 15:04:05"))
 
-	err = etl.InsertRawData(filename)
+	err = etl.InsertRawData(*filename)
 	if err != nil {
 		fmt.Printf("ERROR: %s\n", err)
 		return
@@ -53,4 +58,12 @@ func main() {
 	etl.RecordCount()
 
 	fmt.Println("Fim", time.Now().Format("02/01/2006 15:04:05"))
+}
+
+func getDatabase() string {
+	database := os.Getenv("DATABASE")
+	if database == "" {
+		return "host=localhost port=5439 user=postgres password=postgres dbname=nwy sslmode=disable"
+	}
+	return database
 }

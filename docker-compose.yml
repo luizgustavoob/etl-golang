@@ -3,6 +3,7 @@ version: '3.0'
 services:
   go:
     build: ./app/
+    container_name: etl-nwy
     working_dir: /go/src/github.com/etl-golang/app
     environment: 
       DATABASE: host=postgres port=5432 user=postgres password=postgres dbname=nwy sslmode=disable
@@ -12,10 +13,11 @@ services:
       - "8085:8085"
     depends_on: 
       - postgres
-    command: ["./scripts/wait-for-it.sh", "postgres:5432", "--", "go", "run", "cmd/etl/main.go"]
+    command: ["./scripts/wait-for-it.sh", "postgres:5432", "--", "go", "run", "cmd/etl/main.go", "-f", "base_teste.txt"]
   
   postgres:
     image: postgres:12-alpine
+    container_name: postgres-nwy
     environment:
       POSTGRES_DB: nwy
       POSTGRES_USER: postgres
